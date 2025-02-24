@@ -19,26 +19,21 @@ void runSimulation(const int nx, const int ny, const int nt, const int sx, const
     solver.saveToFile(filename);
 
     std::cout << "Simulation results:" << std::endl;
-    std::cout << "Total computation time: " << solver.getTotalTime() << " seconds" << std::endl;
+    std::cout << "Total computation time: " << solver.getTotalTime() << " milliseconds" << std::endl;
     std::cout << "Final max U value: " << solver.getMaxU() << std::endl;
     std::cout << "Results saved to: " << filename << std::endl;
 }
 
 int main() {
-    constexpr int NX = 600;
-    constexpr int NY = 600;
-    constexpr int NT = 1500;
+    constexpr int NX = 8000;
+    constexpr int NY = 8000;
+    constexpr int NT = 100;
 
     std::cout << "Grid size: " << NX << "x" << NY << std::endl;
     std::cout << "Time steps: " << NT << std::endl;
 
-    // Случай а) SX = 1, SY = 1
     runSimulation(NX, NY, NT, 1, 1);
-    // runSimulation(NX, NY, NT, NX-1, NY-1);
-
-    // getc(stdin);
-    // Случай б) SX = NX-1, SY = NY-1
-    // runSimulation(NX, NY, NT, NX-1, NY-1, "b");
+    // runSimulation(NX, NY, NT, NX-2, NY-2);
 
     return 0;
 }

@@ -29,8 +29,8 @@ void GnuplotRealTime::setupPlot() {
     sendCommand("set xrange [0:" + std::to_string(nx) + "]");
     sendCommand("set yrange [0:" + std::to_string(ny) + "]");
 
-    sendCommand("set zrange[-2e-6:2e-6]");
-    sendCommand("set cbrange[-2e-6:2e-6]");
+    sendCommand("set zrange[-4e-5:4e-5]");
+    sendCommand("set cbrange[-4e-5:4e-5]");
 
     sendCommand("set palette gray");
 

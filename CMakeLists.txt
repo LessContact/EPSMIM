@@ -9,4 +9,7 @@ add_executable(EPSMIM main.cpp
         GnuplotRealTime.cpp
         GnuplotRealTime.h)
 
-target_compile_options(EPSMIM PRIVATE -Ofast)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Ofast -finline-functions")
+
+#target_compile_options(EPSMIM PRIVATE -Ofast)

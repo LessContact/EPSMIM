@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <chrono>
 
-#define PLOT
+// #define PLOT
 
 #ifdef PLOT
 #include "GnuplotRealTime.h"
@@ -17,7 +17,7 @@ public:
     WaveSolver(int nx, int ny, int nt, int sx, int sy);
     void saveToFile(const std::string& filename) const;
     void solve();
-    double getTotalTime() const { return totalTime; }
+    size_t getTotalTime() const { return totalTime; }
     double getMaxU() const { return currentMaxU; }
 
 private:
@@ -42,7 +42,7 @@ private:
     std::vector<std::vector<double>> U_next;    // следующий слой
     std::vector<std::vector<double>> P;         // фазовая скорость
 
-    double totalTime = 0.0;    // полное время расчёта
+    size_t totalTime = 0.0;    // полное время расчёта
     double currentMaxU = 0.0;  // текущее максимальное значение U
 
     void initializeArrays();
