@@ -1,0 +1,59 @@
+#ifndef WAVE_SOLVER_HPP
+#define WAVE_SOLVER_HPP
+
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include <chrono>
+
+#define PLOT
+
+#ifdef PLOT
+#include "GnuplotRealTime.h"
+#endif
+
+class WaveSolver {
+public:
+    WaveSolver(int nx, int ny, int nt, int sx, int sy);
+    void saveToFile(const std::string& filename) const;
+    void solve();
+    double getTotalTime() const { return totalTime; }
+    double getMaxU() const { return currentMaxU; }
+
+private:
+    // Размеры сетки
+    const int NX, NY, NT;
+    const double XA = 0.0, XB = 4.0;
+    const double YA = 0.0, YB = 4.0;
+    
+    // Параметры источника
+    const double f0 = 1.0;
+    const double t0 = 1.5;
+    const double gamma = 4.0;
+    const int SX, SY;  // координаты источника
+
+    // Шаги по пространству и времени
+    const double hx, hy;
+    const double tau;
+
+    // Массивы для решения
+    std::vector<std::vector<double>> U_curr;    // текущий слой
+    std::vector<std::vector<double>> U_prev;    // предыдущий слой
+    std::vector<std::vector<double>> U_next;    // следующий слой
+    std::vector<std::vector<double>> P;         // фазовая скорость
+
+    double totalTime = 0.0;    // полное время расчёта
+    double currentMaxU = 0.0;  // текущее максимальное значение U
+
+    void initializeArrays();
+    double calculateSource(int n, int i, int j) const;
+    void updateWaveField(int n);
+    double findMaxAbsU() const;
+
+#ifdef PLOT
+    GnuplotRealTime plotter;
+#endif
+
+};
+
+#endif
