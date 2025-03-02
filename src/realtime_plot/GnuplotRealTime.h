@@ -23,6 +23,8 @@ public:
 
     void setupPlot();
     void updatePlot(const std::vector<std::vector<double>>& data, const std::string& filename, bool save_png = false);
+    void updatePlot(const std::vector<double>& data, const std::string& filename, bool save_png = false);
+    void updatePlot(double *data, const std::string &filename, bool save_png, size_t size);
 
 private:
     void sendCommand(const std::string& cmd);
