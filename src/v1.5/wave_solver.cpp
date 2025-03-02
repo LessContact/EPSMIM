@@ -31,7 +31,7 @@ void WaveSolver::initializeArrays() {
     // U_curr.resize(NY*NX, 0.0);
     // U_prev.resize(NY*NX, 0.0);
     // U_next.resize(NY*NX, 0.0);
-    data.resize(NY*NX*3, 0.0);
+    data.resize(NY*NX*2, 0.0);
     P.resize(NY*NX);
 
     // Инициализация фазовой скорости
@@ -81,8 +81,6 @@ __always_inline void WaveSolver::updateWaveField(const int n) {
     const uint32_t gridStride = NX * NY;
 
     const double tau2 = tau*tau;
-    const double t = n * tau;
-    const double arg = 2 * std::numbers::pi * f0 * (t - t0);
 
     for (int i = 1; i < NY-1; ++i) {
         for (int j = 1; j < NX-1; ++j) {
@@ -94,15 +92,15 @@ __always_inline void WaveSolver::updateWaveField(const int n) {
             const double py1 = (P[access(j-1,i)] + P[access(j,i)]) * inv2hy2;// / (2 * hy * hy);
             const double py2 = (P[access(j-1,i-1)] + P[access(j,i-1)]) * inv2hy2;// / (2 * hy * hy);
 
-            double source;
-            if (i == SY && j == SX) {
-                source = std::exp(-(arg * arg) / (gamma * gamma)) * std::sin(arg);
-            } else source = 0.0;
+//            double source;
+//            if (i == SY && j == SX) {
+//                source = std::exp(-(arg * arg) / (gamma * gamma)) * std::sin(arg);
+//            } else source = 0.0;
 
             // Вычисление следующего временного слоя
-            data[gridStride*nextGridIndex + access(j,i)] = 2 * data[gridStride*currentGridIndex + access(j,i)] - data[gridStride*prevGridIndex + access(j,i)] +
+            data[gridStride*nextGridIndex + access(j,i)] = 2 * data[gridStride*currentGridIndex + access(j,i)] - data[gridStride*nextGridIndex + access(j,i)] +
                           tau2 * (
-                              source +
+//                              source +
                               //calculateSource(n, i, j) +
                               px1 * (data[gridStride*currentGridIndex + access(j+1,i)] - data[gridStride*currentGridIndex + access(j,i)]) +
                               px2 * (data[gridStride*currentGridIndex + access(j-1,i)] - data[gridStride*currentGridIndex + access(j,i)]) +
@@ -111,6 +109,9 @@ __always_inline void WaveSolver::updateWaveField(const int n) {
                           );
         }
     }
+    const double t = n * tau;
+    const double arg = 2 * std::numbers::pi * f0 * (t - t0);
+    data[gridStride*nextGridIndex + access(SY, SX)] += tau2*std::exp(-(arg * arg) / (gamma * gamma)) * std::sin(arg);
 }
 
 void WaveSolver::solve() {
@@ -151,9 +152,9 @@ void WaveSolver::solve() {
         // Обновление слоёв
         // U_prev.swap(U_curr);
         // U_curr.swap(U_next);
-        prevGridIndex = ++prevGridIndex % 3;
-        currentGridIndex = ++currentGridIndex % 3;
-        nextGridIndex = ++nextGridIndex % 3;
+        // prevGridIndex = ++prevGridIndex % 3;
+        currentGridIndex = ++currentGridIndex % 2;
+        nextGridIndex = ++nextGridIndex % 2;
 
 #ifdef PLOT
         std::string filename = "double" + std::string(5 - std::to_string(n).length(), '0') + std::to_string(n);

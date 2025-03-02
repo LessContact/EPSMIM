@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <chrono>
 
-// #define PLOT
+#define PLOT
 
 #ifdef PLOT
 #include "../realtime_plot/GnuplotRealTime.h"
@@ -40,13 +40,18 @@ private:
     const double tau;
 
     // Массивы для решения
-    std::vector<double> U_curr;    // текущий слой
-    std::vector<double> U_prev;    // предыдущий слой
-    std::vector<double> U_next;    // следующий слой
+    // std::vector<double> U_curr;    // текущий слой
+    // std::vector<double> U_prev;    // предыдущий слой
+    // std::vector<double> U_next;    // следующий слой
+    std::vector<double> data;
     std::vector<double> P;         // фазовая скорость
 
     size_t totalTime = 0.0;    // полное время расчёта
     double currentMaxU = 0.0;  // текущее максимальное значение U
+
+    // uint32_t prevGridIndex = 0;
+    uint32_t currentGridIndex = 0;
+    uint32_t nextGridIndex = 1;
 
     __always_inline size_t access(int x, int y) const { return x+NX*y; };
     void initializeArrays();

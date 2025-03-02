@@ -25,9 +25,9 @@ void runSimulation(const int nx, const int ny, const int nt, const int sx, const
 }
 
 int main() {
-    constexpr int NX = 600;
-    constexpr int NY = 600;
-    constexpr int NT = 1500;
+    constexpr int NX = 8000;
+    constexpr int NY = 8000;
+    constexpr int NT = 100;
 
     std::cout << "Grid size: " << NX << "x" << NY << std::endl;
     std::cout << "Time steps: " << NT << std::endl;
