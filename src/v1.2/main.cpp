@@ -1,8 +1,10 @@
+#include "affinity.h"
 #include "wave_solver.h"
 #include <iostream>
 #include <iomanip>
 #include <fstream>
 #include <string>
+
 
 void runSimulation(const int nx, const int ny, const int nt, const int sx, const int sy) {
     std::cout << "\nRunning simulation" << std::endl;
@@ -25,6 +27,7 @@ void runSimulation(const int nx, const int ny, const int nt, const int sx, const
 }
 
 int main() {
+    affinity::setAffinity(6);
     constexpr int NX = 8000;
     constexpr int NY = 8000;
     constexpr int NT = 100;
