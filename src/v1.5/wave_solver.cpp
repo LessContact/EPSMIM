@@ -9,8 +9,6 @@ WaveSolver::WaveSolver(const int nx, const int ny, const int nt, const int sx, c
       hx((XB - XA) / (NX - 1)),
       hy((YB - YA) / (NY - 1)),
       tau((NX <= 1000 && NY <= 1000) ? 0.01 : 0.001),
-      // inv2hx2(1.0/(2.0 * hx*hx)),
-      // inv2hy2(1.0/(2.0 * hy*hy)),
       plotter(nx, ny, "wxt")
 #else
     : NX(nx), NY(ny), NT(nt), SX(sx), SY(sy),
@@ -27,10 +25,6 @@ WaveSolver::WaveSolver(const int nx, const int ny, const int nt, const int sx, c
 }
 
 void WaveSolver::initializeArrays() {
-    // Инициализация массивов нулями
-    // U_curr.resize(NY*NX, 0.0);
-    // U_prev.resize(NY*NX, 0.0);
-    // U_next.resize(NY*NX, 0.0);
     data.resize(NY*NX*2, 0.0);
     P.resize(NY*NX);
 
@@ -57,51 +51,21 @@ void WaveSolver::saveToFile(const std::string& filename) const {
     out.close();
 }
 
-// double WaveSolver::calculateSource(const int n, const int i, const int j) const {
-//     if (i == SY && j == SX) {
-//         const double t = n * tau;
-//         // const double t = n * tau;
-//         const double arg = 2 * std::numbers::pi * f0 * (t - t0);
-//         return std::exp(-(arg * arg) / (gamma * gamma)) * std::sin(arg);
-//     }
-//     return 0.0;
-// }
-
-// double WaveSolver::findMaxAbsU() const {
-//     double maxU = 0.0;
-//     for (int i = 0; i < NY; ++i) {
-//         for (int j = 0; j < NX; ++j) {
-//             maxU = std::max(maxU, std::abs(U_curr[i][j]));
-//         }
-//     }
-//     return maxU;
-// }
-
 __always_inline void WaveSolver::updateWaveField(const int n) {
     const uint32_t gridStride = NX * NY;
-
     const double tau2 = tau*tau;
-
     for (int i = 1; i < NY-1; ++i) {
         for (int j = 1; j < NX-1; ++j) {
             // Коэффициенты для производных по x
-            const double px1 = (P[access(j,i-1)] + P[access(j,i)]) * inv2hx2;// / (2 * hx * hx);
-            const double px2 = (P[access(j-1,i-1)] + P[access(j-1,i)]) * inv2hx2;// / (2 * hx * hx);
-
+            const double px1 = (P[access(j,i-1)] + P[access(j,i)]) * inv2hx2;
+            const double px2 = (P[access(j-1,i-1)] + P[access(j-1,i)]) * inv2hx2;
             // Коэффициенты для производных по y
-            const double py1 = (P[access(j-1,i)] + P[access(j,i)]) * inv2hy2;// / (2 * hy * hy);
-            const double py2 = (P[access(j-1,i-1)] + P[access(j,i-1)]) * inv2hy2;// / (2 * hy * hy);
-
-//            double source;
-//            if (i == SY && j == SX) {
-//                source = std::exp(-(arg * arg) / (gamma * gamma)) * std::sin(arg);
-//            } else source = 0.0;
+            const double py1 = (P[access(j-1,i)] + P[access(j,i)]) * inv2hy2;
+            const double py2 = (P[access(j-1,i-1)] + P[access(j,i-1)]) * inv2hy2;
 
             // Вычисление следующего временного слоя
             data[gridStride*nextGridIndex + access(j,i)] = 2 * data[gridStride*currentGridIndex + access(j,i)] - data[gridStride*nextGridIndex + access(j,i)] +
                           tau2 * (
-//                              source +
-                              //calculateSource(n, i, j) +
                               px1 * (data[gridStride*currentGridIndex + access(j+1,i)] - data[gridStride*currentGridIndex + access(j,i)]) +
                               px2 * (data[gridStride*currentGridIndex + access(j-1,i)] - data[gridStride*currentGridIndex + access(j,i)]) +
                               py1 * (data[gridStride*currentGridIndex + access(j,i+1)] - data[gridStride*currentGridIndex + access(j,i)]) +
@@ -119,40 +83,6 @@ void WaveSolver::solve() {
 
     for (int n = 0; n < NT; ++n) {
         updateWaveField(n);
-        // const double t = n * tau;
-        // const double arg = 2 * std::numbers::pi * f0 * (t - t0);
-        // for (int i = 1; i < NY-1; ++i) {
-        //     for (int j = 1; j < NX-1; ++j) {
-        //         // Коэффициенты для производных по x
-        //         const double px1 = (P[access(j,i-1)] + P[access(j,i)]) / (2 * hx * hx);
-        //         const double px2 = (P[access(j-1,i-1)] + P[access(j-1,i)]) / (2 * hx * hx);
-        //
-        //         // Коэффициенты для производных по y
-        //         const double py1 = (P[access(j-1,i)] + P[access(j,i)]) / (2 * hy * hy);
-        //         const double py2 = (P[access(j-1,i-1)] + P[access(j,i-1)]) / (2 * hy * hy);
-        //
-        //         double source;
-        //         if (i == SY && j == SX) {
-        //             source = std::exp(-(arg * arg) / (gamma * gamma)) * std::sin(arg);
-        //         } else source = 0.0;
-        //
-        //         // Вычисление следующего временного слоя
-        //         U_next[access(j,i)] = 2 * U_curr[access(j,i)] - U_prev[access(j,i)] +
-        //                       tau * tau * (
-        //                           source +
-        //                           //calculateSource(n, i, j) +
-        //                           px1 * (U_curr[access(j+1,i)] - U_curr[access(j,i)]) +
-        //                           px2 * (U_curr[access(j-1,i)] - U_curr[access(j,i)]) +
-        //                           py1 * (U_curr[access(j,i+1)] - U_curr[access(j,i)]) +
-        //                           py2 * (U_curr[access(j,i-1)] - U_curr[access(j,i)])
-        //                       );
-        //     }
-        // }
-
-        // Обновление слоёв
-        // U_prev.swap(U_curr);
-        // U_curr.swap(U_next);
-        // prevGridIndex = ++prevGridIndex % 3;
         currentGridIndex = ++currentGridIndex % 2;
         nextGridIndex = ++nextGridIndex % 2;
 
@@ -161,10 +91,9 @@ void WaveSolver::solve() {
         plotter.updatePlot(&(data[NX*NY * currentGridIndex]), filename, false, NX*NY);
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
 #endif
-        // currentMaxU = findMaxAbsU();
         // // Вывод прогресса каждые 10% итераций
         if (n % (NT/10) == 0) {
-            std::cout << "Progress: " << (n * 100.0 / NT) << std::endl;//<< "%, Max U: " << currentMaxU << std::endl;
+            std::cout << "Progress: " << (n * 100.0 / NT) << std::endl;
         }
     }
 

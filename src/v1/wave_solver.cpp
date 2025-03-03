@@ -27,7 +27,6 @@ void WaveSolver::initializeArrays() {
     U_next.resize(NY, std::vector<double>(NX, 0.0));
     P.resize(NY, std::vector<double>(NX));
 
-
     // Инициализация фазовой скорости
     for (int i = 0; i < NY; ++i) {
         for (int j = 0; j < NX; ++j) {

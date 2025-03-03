@@ -26,7 +26,7 @@ void runSimulation(const int nx, const int ny, const int nt, const int sx, const
 }
 
 int main() {
-    affinity::setAffinity(6);
+    affinity::setAffinity(12);
     constexpr int NX = 8000;
     constexpr int NY = 8000;
     constexpr int NT = 100;
@@ -35,7 +35,6 @@ int main() {
     std::cout << "Time steps: " << NT << std::endl;
 
     runSimulation(NX, NY, NT, 1, 1);
-    // runSimulation(NX, NY, NT, NX-2, NY-2);
 
     return 0;
 }

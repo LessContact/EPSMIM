@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <chrono>
 
-#define PLOT
+// #define PLOT
 
 #ifdef PLOT
 #include "../realtime_plot/GnuplotRealTime.h"
@@ -39,11 +39,7 @@ private:
     const double hx, hy;
     const double tau;
 
-    // Массивы для решения
-    // std::vector<double> U_curr;    // текущий слой
-    // std::vector<double> U_prev;    // предыдущий слой
-    // std::vector<double> U_next;    // следующий слой
-    std::vector<double> data;
+    std::vector<double> data;      // массив со всеми U
     std::vector<double> P;         // фазовая скорость
 
     size_t totalTime = 0.0;    // полное время расчёта
@@ -55,14 +51,10 @@ private:
 
     __always_inline size_t access(int x, int y) const { return x+NX*y; };
     void initializeArrays();
-    // double calculateSource(int n, int i, int j) const;
     void updateWaveField(int n);
-    // double findMaxAbsU() const;
-
 #ifdef PLOT
     GnuplotRealTime plotter;
 #endif
-
 };
 
 #endif
