@@ -57,9 +57,6 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
             // Коэффициенты для производных по x
             const double px1 = (P[access(j,i-1)] + P[access(j,i)]) * inv2hx2;
             const double px2 = (P[access(j-1,i-1)] + P[access(j-1,i)]) * inv2hx2;
-
-            const double px1 = (P[access(j,i-1)] + P[access(j,i)]) * inv2hx2;
-            const double px2 = (P[access(j-1,i-1)] + P[access(j-1,i)]) * inv2hx2;
             // Коэффициенты для производных по y
             const double py1 = (P[access(j-1,i)] + P[access(j,i)]) * inv2hy2;
             const double py2 = (P[access(j-1,i-1)] + P[access(j,i-1)]) * inv2hy2;
