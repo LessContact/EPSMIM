@@ -52,6 +52,7 @@ void WaveSolver::saveToFile(const std::string& filename) const {
     out.close();
 }
 
+// /*__inline __attribute__((always_inline))*/ double WaveSolver::calculateSource(const int n, const int i, const int j) const {
 // double WaveSolver::calculateSource(const int n, const int i, const int j) const {
 //     if (i == SY && j == SX) {
 //         const double t = n * tau;
@@ -72,7 +73,7 @@ void WaveSolver::saveToFile(const std::string& filename) const {
 //     return maxU;
 // }
 
-/*__always_inline*/ void WaveSolver::updateWaveField(const int n) {
+/*__inline __attribute__((always_inline))*/ void WaveSolver::updateWaveField(const int n) {
     const double t = n * tau;
     const double arg = 2 * std::numbers::pi * f0 * (t - t0);
     for (int i = 1; i < NY-1; ++i) {
@@ -94,7 +95,7 @@ void WaveSolver::saveToFile(const std::string& filename) const {
             U_next[i][j] = 2 * U_curr[i][j] - U_prev[i][j] +
                           tau * tau * (
                               source +
-                            //   calculateSource(n, i, j) +
+                              //calculateSource(n, i, j) +
                               px1 * (U_curr[i][j+1] - U_curr[i][j]) +
                               px2 * (U_curr[i][j-1] - U_curr[i][j]) +
                               py1 * (U_curr[i+1][j] - U_curr[i][j]) +

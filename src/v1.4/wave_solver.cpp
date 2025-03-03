@@ -77,7 +77,7 @@ void WaveSolver::saveToFile(const std::string& filename) const {
 //     return maxU;
 // }
 
-__always_inline void WaveSolver::updateWaveField(const int n) {
+__inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const int n) {
     const uint32_t gridStride = NX * NY;
 
     const double tau2 = tau*tau;

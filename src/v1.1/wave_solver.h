@@ -16,6 +16,9 @@ class WaveSolver {
 public:
     WaveSolver(int nx, int ny, int nt, int sx, int sy);
     void saveToFile(const std::string& filename) const;
+
+    // double calculateSource(int n, int i, int j) const;
+
     void solve();
     size_t getTotalTime() const { return totalTime; }
     double getMaxU() const { return currentMaxU; }

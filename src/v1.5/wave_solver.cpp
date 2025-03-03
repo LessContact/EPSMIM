@@ -15,8 +15,6 @@ WaveSolver::WaveSolver(const int nx, const int ny, const int nt, const int sx, c
       hx((XB - XA) / (NX - 1)),
       hy((YB - YA) / (NY - 1)),
       tau((NX <= 1000 && NY <= 1000) ? 0.01 : 0.001)
-      // inv2hx2(1.0/(2.0 * hx*hx)),
-      // inv2hy2(1.0/(2.0 * hy*hy))
 #endif
 {
     inv2hx2 = 1.0/(2.0 * hx*hx);
@@ -51,12 +49,15 @@ void WaveSolver::saveToFile(const std::string& filename) const {
     out.close();
 }
 
-__always_inline void WaveSolver::updateWaveField(const int n) {
+__inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const int n) {
     const uint32_t gridStride = NX * NY;
     const double tau2 = tau*tau;
     for (int i = 1; i < NY-1; ++i) {
         for (int j = 1; j < NX-1; ++j) {
             // Коэффициенты для производных по x
+            const double px1 = (P[access(j,i-1)] + P[access(j,i)]) * inv2hx2;
+            const double px2 = (P[access(j-1,i-1)] + P[access(j-1,i)]) * inv2hx2;
+
             const double px1 = (P[access(j,i-1)] + P[access(j,i)]) * inv2hx2;
             const double px2 = (P[access(j-1,i-1)] + P[access(j-1,i)]) * inv2hx2;
             // Коэффициенты для производных по y
@@ -66,6 +67,7 @@ __always_inline void WaveSolver::updateWaveField(const int n) {
             // Вычисление следующего временного слоя
             data[gridStride*nextGridIndex + access(j,i)] = 2 * data[gridStride*currentGridIndex + access(j,i)] - data[gridStride*nextGridIndex + access(j,i)] +
                           tau2 * (
+
                               px1 * (data[gridStride*currentGridIndex + access(j+1,i)] - data[gridStride*currentGridIndex + access(j,i)]) +
                               px2 * (data[gridStride*currentGridIndex + access(j-1,i)] - data[gridStride*currentGridIndex + access(j,i)]) +
                               py1 * (data[gridStride*currentGridIndex + access(j,i+1)] - data[gridStride*currentGridIndex + access(j,i)]) +
@@ -83,6 +85,7 @@ void WaveSolver::solve() {
 
     for (int n = 0; n < NT; ++n) {
         updateWaveField(n);
+
         currentGridIndex = ++currentGridIndex % 2;
         nextGridIndex = ++nextGridIndex % 2;
 
