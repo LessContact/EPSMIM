@@ -4,13 +4,20 @@
 #include <iomanip>
 #include <fstream>
 #include <string>
+#include <likwid.h>
 
 void runSimulation(const int nx, const int ny, const int nt, const int sx, const int sy) {
     std::cout << "\nRunning simulation" << std::endl;
     std::cout << "Source position: SX=" << sx << ", SY=" << sy << std::endl;
 
     WaveSolver solver(nx, ny, nt, sx, sy);
+
+    LIKWID_MARKER_INIT;
+    LIKWID_MARKER_REGISTER("test");
+    LIKWID_MARKER_START("test"); // for likwid benchmarking
     solver.solve();
+    LIKWID_MARKER_STOP("test");
+    LIKWID_MARKER_CLOSE;
 
     // Формируем имя файла для вывода
     std::stringstream ss;

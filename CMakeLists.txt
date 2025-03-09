@@ -3,6 +3,8 @@ project(EPSMIM)
 
 set(CMAKE_CXX_STANDARD 23)
 
+#SET(CMAKE_CXX_COMPILER clang++)
+
 include_directories(src/affinity src/realtime_plot)
 
 add_executable(v1 src/v1/main.cpp
@@ -59,6 +61,12 @@ target_compile_options(v1.2 PRIVATE --warn-no-missing-field-initializers -Wextra
 target_compile_options(v1.3 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
 target_compile_options(v1.4 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
 target_compile_options(v1.5 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
+
+find_package(LIKWID REQUIRED)
+target_include_directories(v1.5 PRIVATE ${LIKWID_INCLUDE_DIRS}) # these are for likwid benchmarking
+target_link_libraries(v1.5 PRIVATE ${LIKWID_LIBRARIES})
+
+target_compile_definitions(v1.5 PRIVATE LIKWID_PERFMON)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g -march=native")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Ofast -g -DNDEBUG -march=native")
