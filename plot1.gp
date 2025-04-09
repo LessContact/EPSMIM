@@ -1,5 +1,5 @@
-nx=8000
-ny=8000
+nx=8001
+ny=8001
 filename="cmake-build-release/double00100.dat"
 set terminal png size 700,600
 set output filename.".png"
