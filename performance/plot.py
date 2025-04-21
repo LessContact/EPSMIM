@@ -5,6 +5,10 @@ import matplotlib.pyplot as plt
 ###############################################################################
 # Configuration
 ###############################################################################
+# NOTE: These values are specific to the AMD Ryzen 7 5700U CPU.
+# You may need to adjust them for your specific CPU architecture.
+# ===========================================================================
+# ===========================================================================
 # Peak performance in GFLOP/s
 peak_gflops = 419114.90 / 1000.0  # e.g. 419.1149 GFLOP/s
 
