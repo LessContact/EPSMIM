@@ -76,16 +76,19 @@ target_compile_options(v2.4 PRIVATE --warn-no-missing-field-initializers -Wextra
 
 target_include_directories(v1.5 PRIVATE ${LIKWID_INCLUDE_DIRS}) # these are for likwid benchmarking
 target_link_libraries(v1.5 PRIVATE ${LIKWID_LIBRARIES})
-#target_include_directories(v1.5 PRIVATE ${LIKWID_INCLUDE_DIRS})
-#target_link_libraries(v1.5 PRIVATE ${LIKWID_LIBRARIES})
+target_include_directories(v2.1 PRIVATE ${LIKWID_INCLUDE_DIRS})
+target_link_libraries(v2.1 PRIVATE ${LIKWID_LIBRARIES})
 
 target_compile_definitions(v1.5 PRIVATE LIKWID_PERFMON)
+target_compile_definitions(v2.1 PRIVATE LIKWID_PERFMON)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g -march=native")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Ofast -g -DNDEBUG -march=native ") #-fopt-info-vec
 #no vector test
 #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Ofast -g -DNDEBUG -march=native -fno-tree-vectorize -fopt-info-vec")
 #set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Ofast -g -DNDEBUG -march=native -fopt-info-vec -fno-strict-aliasing")
+
+#target_link_libraries(v2.4 asan)
 
 message(STATUS "Compile flags for release: ${CMAKE_CXX_FLAGS_RELEASE}")
 message(STATUS "Compile flags for debug: ${CMAKE_CXX_FLAGS_DEBUG}")

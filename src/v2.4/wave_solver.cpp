@@ -84,6 +84,9 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
     auto* vGridNext = reinterpret_cast<__m256d*>(data + gridStride * nextGridIndex);
     auto* vGridCurr = reinterpret_cast<__m256d*>(data + gridStride * currentGridIndex);
     const auto* vP = reinterpret_cast<const __m256d*>(P);
+    // auto volatile var = (112 + 150*NX )%32;
+    // std::cout << var << std::endl;
+    // vGridNext[access(112,150)] = _mm256_set1_pd(0.0);
 
     const auto vSizeX = NX / 4;
     for (int i = 1; i < NY-1; ++i) {
@@ -128,7 +131,7 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
 
             const __m256d pcc = vP[access(j+1,i)];
             const __m256d vPC = ShiftRight(pcb,pcc);
-            const __m256d pbc = vP[access(j+1,i+1)];
+            const __m256d pbc = vP[access(j+1,i-1)];
             const __m256d vPB = ShiftRight(pbb,pbc);
 
             // get differentials
@@ -154,8 +157,6 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
             const __m256d vCur = vGridCurr[access(j,i)];
             const __m256d vResult = _mm256_fmadd_pd(_two, vb,
                 _mm256_fmsub_pd(_tau2, vSum, vCur));
-            debug_i = i;
-            debug_j = j;
             vGridNext[access(j,i)] = vResult;
 
             const __m256d absNewGrid = _mm256_andnot_pd(maskForAbs, vResult);
@@ -217,7 +218,7 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
 }
 
 void WaveSolver::solve() {
-    setup_signal_handler(); // Set up the signal handler
+    // setup_signal_handler(); // Set up the signal handler
 
     const auto start = std::chrono::steady_clock::now();
 

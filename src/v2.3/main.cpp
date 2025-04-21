@@ -29,7 +29,7 @@ void runSimulation(const int nx, const int ny, const int nt, const int sx, const
 
     std::cout << "Simulation results:" << std::endl;
     std::cout << "Total computation time: " << solver.getTotalTime() << " milliseconds" << std::endl;
-    std::cout << "Final max U value: " << solver.getMaxU() << std::endl;
+    // std::cout << "Final max U value: " << solver.getMaxU() << std::endl;
 }
 
 int main() {

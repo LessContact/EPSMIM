@@ -52,7 +52,7 @@ void WaveSolver::saveToFile(const std::string& filename) const {
 __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const int n) {
     const uint32_t gridStride = NX * NY;
     const double tau2 = tau*tau;
-    // Explicitly tell compiler these pointers don't alias
+
     double * __restrict__ current_data = &data[gridStride*currentGridIndex];
     double * __restrict__ next_data = &data[gridStride*nextGridIndex];
     const double * __restrict__ p_values = P.data();

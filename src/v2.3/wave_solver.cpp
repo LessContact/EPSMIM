@@ -59,8 +59,8 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
     const __m256d _inv2hy2 = _mm256_set1_pd(inv2hy2);
     const __m256d _two = _mm256_set1_pd(2.0);
     const __m256d _tau2 = _mm256_set1_pd(tau2);
-    __m256 vMax = _mm256_setzero_pd();
-    const __m256 maskForAbs = _mm256_set1_pd(-0.0f);
+    __m256d vMax = _mm256_setzero_pd();
+    __m256d maskForAbs = _mm256_set1_pd(-0.0f);
 
     for (int i = 1; i < NY-1; ++i) {
         // Process chunks of 4 grid points at a time
@@ -161,7 +161,7 @@ void WaveSolver::solve() {
 #endif
         // // Вывод прогресса каждые 10% итераций
         if (n % (NT/10) == 0) {
-            std::cout << "Progress: " << (n * 100.0 / NT) << "; Current maxU val: " << currentMaxU << std::endl;
+            std::cout << "Progress: " << (n * 100.0 / NT) << "%" << std::endl;
         }
     }
 
