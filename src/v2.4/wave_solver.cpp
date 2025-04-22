@@ -4,26 +4,6 @@
 #include <immintrin.h>
 #include <cstring>
 #include <numbers>
-#include <csignal> // For sigaction
-#include <cstdlib> // For exit
-
-// Global variables to store the current indices for debugging
-static volatile int debug_j = -1, debug_i = -1;
-
-// Signal handler for SIGSEGV
-void handle_sigsegv(int signal) {
-    std::cerr << "Segmentation fault caught! Debug info: access(j, i) = access("
-              << debug_j << ", " << debug_i << ")\n" <<"Is aligned: " << ((debug_j + 600 * debug_i))%32 << std::endl;
-    std::exit(EXIT_FAILURE);
-}
-
-void setup_signal_handler() {
-    struct sigaction sa;
-    sa.sa_handler = handle_sigsegv;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = 0;
-    sigaction(SIGSEGV, &sa, nullptr);
-}
 
 WaveSolver::WaveSolver(const int nx, const int ny, const int nt, const int sx, const int sy)
 #ifdef PLOT
@@ -61,14 +41,28 @@ void WaveSolver::initializeArrays() {
         }
     }
 }
-
-__inline __attribute__((always_inline)) static auto ShiftRight(const auto& a, const auto& b) {
-    // 0b0010_0001 = 0x21
-    // bits [1:0] = 01 pick high 128 of a (a2,a3) goes into result[127:0]
-    // bits [5:4] = 10 pick low 128 of b (b0,b1) goes into result[255:128]
-    return _mm256_permute2f128_pd(a, b, 0b00100001);
-    //a2,a3,b0,b1
-};
+// [a1, a2, a3, b0]
+__inline __attribute__((always_inline)) static auto ShiftRight(const __m256d &a, const __m256d &b) {
+    // step 1: t = [ a1, a2, a3, a0 ]
+    // imm8 = 0b00111001 = 0x39
+    __m256d t = _mm256_permute4x64_pd(a, 0b00111001);
+    // step 2: b0 = [ b0, b0, b0, b0 ]
+    __m256d b0 = _mm256_permute4x64_pd(b, 0b00000000);
+    // step 3: blend lane3 (bit‑3) from b0 into t
+    // mask = 1<<3 = 0b1000
+    return _mm256_blend_pd(t, b0, 0b00001000);
+}
+// [a3, b0, b1, b2]
+__inline __attribute__((always_inline)) static auto ShiftLeft(const __m256d &a, const __m256d &b) {
+    // Goal: [a3, b0, b1, b2]
+    // Use permute and blend.
+    // 1. Get [b0, b1, b2, ??] from b
+    __m256d b_perm = _mm256_permute4x64_pd(b, 0b10010000); // Indices 0, 0, 1, 2 -> [b0, b0, b1, b2]
+    // 2. Get [a3, ??, ??, ??] from a
+    __m256d a_perm = _mm256_permute4x64_pd(a, 0b11111111); // Index 3 replicated -> [a3, a3, a3, a3]
+    // 3. Blend lane 0 of a_perm into b_perm
+    return _mm256_blend_pd(b_perm, a_perm, 0x1); // Mask 0b0001 = 0x1
+}
 
 __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const int n) {
     const uint32_t gridStride = NX * NY;
@@ -79,7 +73,7 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
     const __m256d _two = _mm256_set1_pd(2.0);
     const __m256d _tau2 = _mm256_set1_pd(tau2);
     __m256d vMax = _mm256_setzero_pd();
-    const __m256d maskForAbs = _mm256_set1_pd(-0.0f);
+    const __m256d maskForAbs = _mm256_set1_pd(-0.0);
 
     auto* vGridNext = reinterpret_cast<__m256d*>(data + gridStride * nextGridIndex);
     auto* vGridCurr = reinterpret_cast<__m256d*>(data + gridStride * currentGridIndex);
@@ -93,52 +87,53 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
         // first 4 elems
         for (int j = 1; j < 4; ++j) {
             // Коэффициенты для производных по x
-            const double px1 = (P[access(j,i-1)] + P[access(j,i)]) * inv2hx2;
-            const double px2 = (P[access(j-1,i-1)] + P[access(j-1,i)]) * inv2hx2;
+            const double px1 = (P[access_full(j,i-1)] + P[access_full(j,i)]) * inv2hx2;
+            const double px2 = (P[access_full(j-1,i-1)] + P[access_full(j-1,i)]) * inv2hx2;
             // Коэффициенты для производных по y
-            const double py1 = (P[access(j-1,i)] + P[access(j,i)]) * inv2hy2;
-            const double py2 = (P[access(j-1,i-1)] + P[access(j,i-1)]) * inv2hy2;
+            const double py1 = (P[access_full(j-1,i)] + P[access_full(j,i)]) * inv2hy2;
+            const double py2 = (P[access_full(j-1,i-1)] + P[access_full(j,i-1)]) * inv2hy2;
 
             // Вычисление следующего временного слоя
-            data[gridStride*nextGridIndex + access(j,i)] = 2 * data[gridStride*currentGridIndex + access(j,i)] - data[gridStride*nextGridIndex + access(j,i)] +
+            data[gridStride*nextGridIndex + access_full(j,i)] = 2 * data[gridStride*currentGridIndex + access_full(j,i)] - data[gridStride*nextGridIndex + access_full(j,i)] +
                           tau2 * (
 
-                              px1 * (data[gridStride*currentGridIndex + access(j+1,i)] - data[gridStride*currentGridIndex + access(j,i)]) +
-                              px2 * (data[gridStride*currentGridIndex + access(j-1,i)] - data[gridStride*currentGridIndex + access(j,i)]) +
-                              py1 * (data[gridStride*currentGridIndex + access(j,i+1)] - data[gridStride*currentGridIndex + access(j,i)]) +
-                              py2 * (data[gridStride*currentGridIndex + access(j,i-1)] - data[gridStride*currentGridIndex + access(j,i)])
+                              px1 * (data[gridStride*currentGridIndex + access_full(j+1,i)] - data[gridStride*currentGridIndex + access_full(j,i)]) +
+                              px2 * (data[gridStride*currentGridIndex + access_full(j-1,i)] - data[gridStride*currentGridIndex + access_full(j,i)]) +
+                              py1 * (data[gridStride*currentGridIndex + access_full(j,i+1)] - data[gridStride*currentGridIndex + access_full(j,i)]) +
+                              py2 * (data[gridStride*currentGridIndex + access_full(j,i-1)] - data[gridStride*currentGridIndex + access_full(j,i)])
                           );
-            currentMaxU = std::max(currentMaxU, std::abs(data[gridStride*nextGridIndex + access(j,i)]));
+            currentMaxU = std::max(currentMaxU, std::abs(data[gridStride*nextGridIndex + access_full(j,i)]));
         }
 
         __m256d va = vGridCurr[access(0,i)];
         __m256d vb = vGridCurr[access(1,i)];
-        __m256d vl = ShiftRight(va,vb);
 
         __m256d pca = vP[access(0,i)];
         __m256d pcb = vP[access(1,i)];
-        __m256d vPL = ShiftRight(pca,pcb);
 
         __m256d pba = vP[access(0,i-1)];
         __m256d pbb = vP[access(1,i-1)];
-        __m256d vPBL = ShiftRight(pba,pbb);
 
         for (int j = 1; j < vSizeX - 1; ++j) {
             const __m256d vc = vGridCurr[access(j+1,i)];
-            const __m256d vr = ShiftRight(vb,vc);
+
+            const __m256d pcc = vP[access(j+1,i)];
+            const __m256d pbc = vP[access(j+1,i-1)];
+
             const __m256d vTop = vGridCurr[access(j,i+1)];
             const __m256d vBottom = vGridCurr[access(j,i-1)];
 
-            const __m256d pcc = vP[access(j+1,i)];
-            const __m256d vPC = ShiftRight(pcb,pcc);
-            const __m256d pbc = vP[access(j+1,i-1)];
-            const __m256d vPB = ShiftRight(pbb,pbc);
+            const __m256d vl = ShiftLeft(va, vb);
+            const __m256d vr = ShiftRight(vb, vc);
+
+            const __m256d vP_Left = ShiftLeft(pca, pcb);
+            const __m256d vP_BottomLeft = ShiftLeft(pba, pbb);
 
             // get differentials
-            const __m256d vPx1 = _mm256_mul_pd(_mm256_add_pd(vPB, vPC), _inv2hx2);
-            const __m256d vPx2 = _mm256_mul_pd(_mm256_add_pd(vPBL, vPL), _inv2hx2);
-            const __m256d vPy1 = _mm256_mul_pd(_mm256_add_pd(vPL, vPC), _inv2hy2);
-            const __m256d vPy2 = _mm256_mul_pd(_mm256_add_pd(vPBL, vPB), _inv2hy2);
+            const __m256d vPx1 = _mm256_mul_pd(_mm256_add_pd(pbb, pcb), _inv2hx2);
+            const __m256d vPx2 = _mm256_mul_pd(_mm256_add_pd(vP_BottomLeft, vP_Left), _inv2hx2);
+            const __m256d vPy1 = _mm256_mul_pd(_mm256_add_pd(vP_Left, pcb), _inv2hy2);
+            const __m256d vPy2 = _mm256_mul_pd(_mm256_add_pd(vP_BottomLeft, pbb), _inv2hy2);
 
             //differences
             const __m256d vDiffRight = _mm256_sub_pd(vr, vb);
@@ -149,14 +144,21 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
             //terms
             const __m256d vTerm1 = _mm256_mul_pd(vDiffRight, vPx1);
             const __m256d vTerm2 = _mm256_mul_pd(vDiffLeft, vPx2);
-            const __m256d vTerm3 = _mm256_mul_pd(vDiffDown, vPy1);
-            const __m256d vTerm4 = _mm256_mul_pd(vDiffUp, vPy2);
+            // const __m256d vTerm3 = _mm256_mul_pd(vDiffDown, vPy1);
+            // const __m256d vTerm4 = _mm256_mul_pd(vDiffUp, vPy2);
+            const __m256d vTerm3 = _mm256_mul_pd(vDiffUp, vPy1);
+            const __m256d vTerm4 = _mm256_mul_pd(vDiffDown, vPy2);
             //sum
             const __m256d vSum = _mm256_add_pd(_mm256_add_pd(vTerm1, vTerm2), _mm256_add_pd(vTerm3, vTerm4));
             //result
-            const __m256d vCur = vGridCurr[access(j,i)];
-            const __m256d vResult = _mm256_fmadd_pd(_two, vb,
-                _mm256_fmsub_pd(_tau2, vSum, vCur));
+            // const __m256d vCur = vGridCurr[access(j,i)];
+            // const __m256d vResult = _mm256_fmadd_pd(_two, vb,
+            //     _mm256_fmsub_pd(_tau2, vSum, vCur));
+            // vGridNext[access(j,i)] = vResult;
+            const __m256d vPrev = vGridNext[access(j,i)];
+
+            const __m256d vTmp = _mm256_fmsub_pd(_two, vb, vPrev);
+            const __m256d vResult = _mm256_fmadd_pd(_tau2, vSum, vTmp);
             vGridNext[access(j,i)] = vResult;
 
             const __m256d absNewGrid = _mm256_andnot_pd(maskForAbs, vResult);
@@ -165,15 +167,15 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
             //move right
             va = vb;
             vb = vc;
-            vl = vr;
+            // vl is calculated inside loop
 
             pca = pcb;
             pcb = pcc;
-            vPL = vPC;
+            // vPL is calculated inside loop
 
             pba = pbb;
-            pbb = pbc;
-            vPBL = vPB;
+            pbb = pbc; // pbc holds P from j+1, i-1 loaded at start of loop
+            // vPBL is calculated inside loop
         }
 
         // reduction horizontal (for doubles, AVX2)
@@ -190,35 +192,34 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
         // Handle remaining grid points with scalar code
         for (int j = NX - ((NX-1) % 4); j < NX-1; ++j) {
             // Scalar computation identical to the original code
-            const double px1 = (P[access(j,i-1)] + P[access(j,i)]) * inv2hx2;
-            const double px2 = (P[access(j-1,i-1)] + P[access(j-1,i)]) * inv2hx2;
-            const double py1 = (P[access(j-1,i)] + P[access(j,i)]) * inv2hy2;
-            const double py2 = (P[access(j-1,i-1)] + P[access(j,i-1)]) * inv2hy2;
+            const double px1 = (P[access_full(j,i-1)] + P[access_full(j,i)]) * inv2hx2;
+            const double px2 = (P[access_full(j-1,i-1)] + P[access_full(j-1,i)]) * inv2hx2;
+            const double py1 = (P[access_full(j-1,i)] + P[access_full(j,i)]) * inv2hy2;
+            const double py2 = (P[access_full(j-1,i-1)] + P[access_full(j,i-1)]) * inv2hy2;
 
-            data[gridStride*nextGridIndex + access(j,i)] =
-                2 * data[gridStride*currentGridIndex + access(j,i)] -
-                data[gridStride*nextGridIndex + access(j,i)] +
+            data[gridStride*nextGridIndex + access_full(j,i)] =
+                2 * data[gridStride*currentGridIndex + access_full(j,i)] -
+                data[gridStride*nextGridIndex + access_full(j,i)] +
                 tau2 * (
-                    px1 * (data[gridStride*currentGridIndex + access(j+1,i)] -
-                          data[gridStride*currentGridIndex + access(j,i)]) +
-                    px2 * (data[gridStride*currentGridIndex + access(j-1,i)] -
-                          data[gridStride*currentGridIndex + access(j,i)]) +
-                    py1 * (data[gridStride*currentGridIndex + access(j,i+1)] -
-                          data[gridStride*currentGridIndex + access(j,i)]) +
-                    py2 * (data[gridStride*currentGridIndex + access(j,i-1)] -
-                          data[gridStride*currentGridIndex + access(j,i)])
+                    px1 * (data[gridStride*currentGridIndex + access_full(j+1,i)] -
+                          data[gridStride*currentGridIndex + access_full(j,i)]) +
+                    px2 * (data[gridStride*currentGridIndex + access_full(j-1,i)] -
+                          data[gridStride*currentGridIndex + access_full(j,i)]) +
+                    py1 * (data[gridStride*currentGridIndex + access_full(j,i+1)] -
+                          data[gridStride*currentGridIndex + access_full(j,i)]) +
+                    py2 * (data[gridStride*currentGridIndex + access_full(j,i-1)] -
+                          data[gridStride*currentGridIndex + access_full(j,i)])
                 );
-            currentMaxU = std::max(currentMaxU, std::abs(data[gridStride*nextGridIndex + access(j,i)]));
+            currentMaxU = std::max(currentMaxU, std::abs(data[gridStride*nextGridIndex + access_full(j,i)]));
         }
     }
 
-    const double t = n * tau;
+    const double t = (n+1) * tau;
     const double arg = 2 * std::numbers::pi * f0 * (t - t0);
     data[gridStride*nextGridIndex + access(SY, SX)] += tau2*std::exp(-(arg * arg) / (gamma * gamma)) * std::sin(arg);
 }
 
 void WaveSolver::solve() {
-    // setup_signal_handler(); // Set up the signal handler
 
     const auto start = std::chrono::steady_clock::now();
 

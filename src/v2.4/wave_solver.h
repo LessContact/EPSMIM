@@ -8,7 +8,7 @@
 #include <chrono>
 #include "align_alloc.h"
 
-// #define PLOT
+#define PLOT
 
 #ifdef PLOT
 #include "../realtime_plot/GnuplotRealTime.h"
@@ -65,6 +65,7 @@ private:
     uint32_t nextGridIndex = 1;
 
     __inline __attribute__((always_inline)) size_t access(int x, int y) const { return x+(NX/4)*y; };
+    __inline __attribute__((always_inline)) size_t access_full(int x, int y) const { return x+NX*y; };
     void initializeArrays();
     void updateWaveField(int n);
 #ifdef PLOT
