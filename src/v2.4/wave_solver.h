@@ -8,7 +8,7 @@
 #include <chrono>
 #include "align_alloc.h"
 
-#define PLOT
+// #define PLOT
 
 #ifdef PLOT
 #include "../realtime_plot/GnuplotRealTime.h"

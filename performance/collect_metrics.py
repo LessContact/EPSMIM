@@ -46,7 +46,11 @@ def main():
             'L1':  'N:32kB:1',
             'L2':  'N:512kB:1',
             'L3':  'N:4MB:1',
-            'RAM': 'N:512MB:1'
+            'RAM': 'N:512MB:1',
+            'L1_M': 'N:32kB:16',
+            'L2_M': 'N:512kB:16',
+            'L3_M': 'N:4MB:16',
+            'RAM_M':'N:512MB:16',
         }
         print("\n== likwid-bench cache/RAM bandwidth & flops ==")
         for level, param in ws.items():

@@ -44,24 +44,18 @@ void WaveSolver::initializeArrays() {
 // [a1, a2, a3, b0]
 __inline __attribute__((always_inline)) static auto ShiftRight(const __m256d &a, const __m256d &b) {
     // step 1: t = [ a1, a2, a3, a0 ]
-    // imm8 = 0b00111001 = 0x39
     __m256d t = _mm256_permute4x64_pd(a, 0b00111001);
     // step 2: b0 = [ b0, b0, b0, b0 ]
     __m256d b0 = _mm256_permute4x64_pd(b, 0b00000000);
-    // step 3: blend lane3 (bit‑3) from b0 into t
-    // mask = 1<<3 = 0b1000
-    return _mm256_blend_pd(t, b0, 0b00001000);
+    return _mm256_blend_pd(t, b0, 0b1000);
 }
 // [a3, b0, b1, b2]
 __inline __attribute__((always_inline)) static auto ShiftLeft(const __m256d &a, const __m256d &b) {
-    // Goal: [a3, b0, b1, b2]
-    // Use permute and blend.
-    // 1. Get [b0, b1, b2, ??] from b
-    __m256d b_perm = _mm256_permute4x64_pd(b, 0b10010000); // Indices 0, 0, 1, 2 -> [b0, b0, b1, b2]
-    // 2. Get [a3, ??, ??, ??] from a
-    __m256d a_perm = _mm256_permute4x64_pd(a, 0b11111111); // Index 3 replicated -> [a3, a3, a3, a3]
-    // 3. Blend lane 0 of a_perm into b_perm
-    return _mm256_blend_pd(b_perm, a_perm, 0x1); // Mask 0b0001 = 0x1
+    __m256d b_perm = _mm256_permute4x64_pd(b, 0b10010000);
+    // 1. Indices 0, 0, 1, 2 -> [b0, b0, b1, b2]
+    __m256d a_perm = _mm256_permute4x64_pd(a, 0b11111111);
+    // 2. Index 3 replicated -> [a3, a3, a3, a3]
+    return _mm256_blend_pd(b_perm, a_perm, 0x0001);
 }
 
 __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const int n) {
