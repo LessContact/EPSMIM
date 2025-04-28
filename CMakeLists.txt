@@ -62,6 +62,10 @@ add_executable(v2.4 src/v2/v2.4/main.cpp
         ${COMMON_SRC}
         src/v2/v2.4/align_alloc.h)
 
+add_executable(v3.0 src/v3/v3.0/main.cpp
+        src/v3/v3.0/wave_solver.cpp
+        ${COMMON_SRC})
+
 target_compile_options(v1.0 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
 target_compile_options(v1.1 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
 target_compile_options(v1.2 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
@@ -73,6 +77,7 @@ target_compile_options(v2.1 PRIVATE --warn-no-missing-field-initializers -Wextra
 target_compile_options(v2.2 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
 target_compile_options(v2.3 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
 target_compile_options(v2.4 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
+target_compile_options(v3.0 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
 
 target_include_directories(v1.5 PRIVATE ${LIKWID_INCLUDE_DIRS}) # these are for likwid benchmarking
 target_link_libraries(v1.5 PRIVATE ${LIKWID_LIBRARIES})
