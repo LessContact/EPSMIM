@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <chrono>
 
-// #define PLOT
+#define PLOT
 
 #ifdef PLOT
 #include "../realtime_plot/GnuplotRealTime.h"
@@ -46,12 +46,12 @@ private:
     double currentMaxU = 0.0;  // текущее максимальное значение U
 
     // uint32_t prevGridIndex = 0;
-    uint32_t currentGridIndex = 0;
-    uint32_t nextGridIndex = 1;
+    int currentGridIndex = 0;
+    int nextGridIndex = 1;
 
     __inline __attribute__((always_inline)) size_t access(int x, int y) const { return x+NX*y; };
     void initializeArrays();
-    void updateWaveField(int n);
+    void updateWaveField(int n, int i);
 #ifdef PLOT
     GnuplotRealTime plotter;
 #endif
