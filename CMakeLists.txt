@@ -12,55 +12,55 @@ include_directories(src/affinity src/realtime_plot)
 
 set(COMMON_SRC src/realtime_plot/GnuplotRealTime.cpp src/affinity/affinity.cpp)
 
-add_executable(v1.0 src/v1.0/main.cpp
-        src/v1.0/wave_solver.cpp
+add_executable(v1.0 src/v1/v1.0/main.cpp
+        src/v1/v1.0/wave_solver.cpp
         ${COMMON_SRC})
 
-add_executable(v1.1 src/v1.1/main.cpp
-        src/v1.1/wave_solver.cpp
+add_executable(v1.1 src/v1/v1.1/main.cpp
+        src/v1/v1.1/wave_solver.cpp
         ${COMMON_SRC})
 
-add_executable(v1.2 src/v1.2/main.cpp
-        src/v1.2/wave_solver.cpp
+add_executable(v1.2 src/v1/v1.2/main.cpp
+        src/v1/v1.2/wave_solver.cpp
         ${COMMON_SRC})
 
-add_executable(v1.3 src/v1.3/main.cpp
-        src/v1.3/wave_solver.cpp
+add_executable(v1.3 src/v1/v1.3/main.cpp
+        src/v1/v1.3/wave_solver.cpp
         ${COMMON_SRC})
 
-add_executable(v1.4 src/v1.4/main.cpp
-        src/v1.4/wave_solver.cpp
+add_executable(v1.4 src/v1/v1.4/main.cpp
+        src/v1/v1.4/wave_solver.cpp
         ${COMMON_SRC})
 
-add_executable(v1.5 src/v1.5/main.cpp
-        src/v1.5/wave_solver.cpp
+add_executable(v1.5 src/v1/v1.5/main.cpp
+        src/v1/v1.5/wave_solver.cpp
         ${COMMON_SRC})
 
 # auto compiler simd
-add_executable(v2.0 src/v2.0/main.cpp
-        src/v2.0/wave_solver.cpp
+add_executable(v2.0 src/v2/v2.0/main.cpp
+        src/v2/v2.0/wave_solver.cpp
         ${COMMON_SRC})
 
 # __restrict__ hint
-add_executable(v2.1 src/v2.1/main.cpp
-        src/v2.1/wave_solver.cpp
+add_executable(v2.1 src/v2/v2.1/main.cpp
+        src/v2/v2.1/wave_solver.cpp
         ${COMMON_SRC})
 
 # unaligned intrinsics without fma
-add_executable(v2.2 src/v2.2/main.cpp
-        src/v2.2/wave_solver.cpp
+add_executable(v2.2 src/v2/v2.2/main.cpp
+        src/v2/v2.2/wave_solver.cpp
         ${COMMON_SRC})
 
 # unaligned intrinsics with fma
-add_executable(v2.3 src/v2.3/main.cpp
-        src/v2.3/wave_solver.cpp
+add_executable(v2.3 src/v2/v2.3/main.cpp
+        src/v2/v2.3/wave_solver.cpp
         ${COMMON_SRC})
 
 # assume aligned without fma
-add_executable(v2.4 src/v2.4/main.cpp
-        src/v2.4/wave_solver.cpp
+add_executable(v2.4 src/v2/v2.4/main.cpp
+        src/v2/v2.4/wave_solver.cpp
         ${COMMON_SRC}
-        src/v2.4/align_alloc.h)
+        src/v2/v2.4/align_alloc.h)
 
 target_compile_options(v1.0 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
 target_compile_options(v1.1 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
