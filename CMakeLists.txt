@@ -12,8 +12,8 @@ include_directories(src/affinity src/realtime_plot)
 
 set(COMMON_SRC src/realtime_plot/GnuplotRealTime.cpp src/affinity/affinity.cpp)
 
-add_executable(v1 src/v1/main.cpp
-        src/v1/wave_solver.cpp
+add_executable(v1.0 src/v1.0/main.cpp
+        src/v1.0/wave_solver.cpp
         ${COMMON_SRC})
 
 add_executable(v1.1 src/v1.1/main.cpp
@@ -37,8 +37,8 @@ add_executable(v1.5 src/v1.5/main.cpp
         ${COMMON_SRC})
 
 # auto compiler simd
-add_executable(v2 src/v2/main.cpp
-        src/v2/wave_solver.cpp
+add_executable(v2.0 src/v2.0/main.cpp
+        src/v2.0/wave_solver.cpp
         ${COMMON_SRC})
 
 # __restrict__ hint
@@ -62,13 +62,13 @@ add_executable(v2.4 src/v2.4/main.cpp
         ${COMMON_SRC}
         src/v2.4/align_alloc.h)
 
-target_compile_options(v1 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
+target_compile_options(v1.0 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
 target_compile_options(v1.1 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
 target_compile_options(v1.2 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
 target_compile_options(v1.3 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
 target_compile_options(v1.4 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
 target_compile_options(v1.5 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
-target_compile_options(v2 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
+target_compile_options(v2.0 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
 target_compile_options(v2.1 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
 target_compile_options(v2.2 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)
 target_compile_options(v2.3 PRIVATE --warn-no-missing-field-initializers -Wextra -Wshadow -Wpedantic)

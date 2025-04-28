@@ -161,15 +161,12 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
             //move right
             va = vb;
             vb = vc;
-            // vl is calculated inside loop
 
             pca = pcb;
             pcb = pcc;
-            // vPL is calculated inside loop
 
             pba = pbb;
-            pbb = pbc; // pbc holds P from j+1, i-1 loaded at start of loop
-            // vPBL is calculated inside loop
+            pbb = pbc;
         }
 
         // reduction horizontal (for doubles, AVX2)
