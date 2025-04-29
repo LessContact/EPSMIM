@@ -83,6 +83,7 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
 void WaveSolver::solve() {
     const std::vector<int> steps{1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20, 24, 25, 30, 40, 60, 80, 90, 100};
     constexpr int rerunCount = 5;
+    // const std::vector<int> steps{5};
 
     std::vector<std::pair<int, int>> stepResults(steps.size(), std::make_pair(0, 0));
     for (int rerunIndex = 0; rerunIndex < rerunCount; ++rerunIndex) {
@@ -102,14 +103,10 @@ void WaveSolver::solve() {
                         updateWaveField(step + j, i - j);
 
                         std::swap(currentGridIndex, nextGridIndex);
-                        // currentGridIndex = nextGridIndex;
-                        // nextGridIndex = (nextGridIndex + 1) % 2;
                     }
 
                     if (i % 2 == 1) {
                         std::swap(currentGridIndex, nextGridIndex);
-                        // currentGridIndex = nextGridIndex;
-                        // nextGridIndex = (nextGridIndex + 1) % 2;
                     }
                 }
 
@@ -120,31 +117,21 @@ void WaveSolver::solve() {
                         updateWaveField(step + j, i - j);
 
                         std::swap(currentGridIndex, nextGridIndex);
-                        // currentGridIndex = nextGridIndex;
-                        // nextGridIndex = (nextGridIndex + 1) % 2;
                     }
 
-                    if (i % 2 == 1) {
+                    if (stepsPerPass % 2 == 1) {
                         std::swap(currentGridIndex, nextGridIndex);
-                        // currentGridIndex = nextGridIndex;
-                        // nextGridIndex = (nextGridIndex + 1) % 2;
                     }
                 }
 
                 std::swap(currentGridIndex, nextGridIndex);
-                // currentGridIndex = nextGridIndex;
-                // nextGridIndex = (nextGridIndex + 1) % 2;
 
                 // finalize
                 for (int j{1}; j < stepsPerPass && j < NT; ++j) {
                     for (int i{0}; i < j; ++i) {
-
-                        updateWaveField(step + j, NY - i - 1);
-
-                        std::swap(currentGridIndex, nextGridIndex);
-                        // currentGridIndex = nextGridIndex;
-                        // nextGridIndex = (nextGridIndex + 1) % 2;
+                        updateWaveField(step + j, NY - i - 2);
                     }
+                    std::swap(currentGridIndex, nextGridIndex);
                 }
 #ifdef PLOT
                 std::string filename = "double" + std::string(5 - std::to_string(step).length(), '0') + std::to_string(step);

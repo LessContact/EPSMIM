@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <chrono>
 
-// #define PLOT
+#define PLOT
 
 #ifdef PLOT
 #include "../realtime_plot/GnuplotRealTime.h"
