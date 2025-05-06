@@ -83,9 +83,12 @@ target_include_directories(v1.5 PRIVATE ${LIKWID_INCLUDE_DIRS}) # these are for 
 target_link_libraries(v1.5 PRIVATE ${LIKWID_LIBRARIES})
 target_include_directories(v2.1 PRIVATE ${LIKWID_INCLUDE_DIRS})
 target_link_libraries(v2.1 PRIVATE ${LIKWID_LIBRARIES})
+target_include_directories(v3.0 PRIVATE ${LIKWID_INCLUDE_DIRS})
+target_link_libraries(v3.0 PRIVATE ${LIKWID_LIBRARIES})
 
 target_compile_definitions(v1.5 PRIVATE LIKWID_PERFMON)
 target_compile_definitions(v2.1 PRIVATE LIKWID_PERFMON)
+target_compile_definitions(v3.0 PRIVATE LIKWID_PERFMON)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g -march=native")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Ofast -g -DNDEBUG -march=native ") #-fopt-info-vec

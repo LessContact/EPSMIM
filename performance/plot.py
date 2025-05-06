@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 # ===========================================================================
 # Peak performance in GFLOP/s
 peak_gflops = 419114.90 / 1000.0  # e.g. 419.1149 GFLOP/s
+# single core performance
+single_core_gflops = 67994.91 / 1000.0
 
 # Memory/cache bandwidths in GB/s
 bandwidths = [
@@ -40,8 +42,11 @@ bandwidths = [
 # ====================
 app_points = [
     ("epsmim1", 0.1585, 13898.3465 / 1000.0),
-    ("epsmim2", 0.1588 , 13739.3066 / 1000.0)
+    ("epsmim2", 0.1588 , 13739.3066 / 1000.0),
+    ("epsmim3", 1.0668, 25928.0253 / 1000.0)
 ]
+
+
 ######### END OF APPLICATION POINT #########
 
 # Plot range
@@ -68,8 +73,7 @@ for name, bw, color in bandwidths:
 # Horizontal line for peak
 plt.axhline(y=peak_gflops, color="black", linestyle="--",
             label=f"Peak FLOPs ({peak_gflops:.1f} GFLOP/s)")
-# single core performance
-single_core_gflops = 67994.91 / 1000.0
+
 plt.axhline(y=single_core_gflops, color="orange", linestyle="--",
             label=f"Single-Core Peak ({single_core_gflops:.1f} GFLOP/s)")
 

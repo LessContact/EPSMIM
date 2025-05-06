@@ -81,9 +81,9 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
 }
 
 void WaveSolver::solve() {
-    const std::vector<int> steps{1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20, 24, 25, 30, 40, 60, 80, 90, 100};
-    constexpr int rerunCount = 5;
-    // const std::vector<int> steps{5};
+    // const std::vector<int> steps{1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20, 24, 25, 30, 40, 60, 80, 90, 100};
+    constexpr int rerunCount = 1;
+    const std::vector<int> steps{10};
 
     std::vector<std::pair<int, int>> stepResults(steps.size(), std::make_pair(0, 0));
     for (int rerunIndex = 0; rerunIndex < rerunCount; ++rerunIndex) {
