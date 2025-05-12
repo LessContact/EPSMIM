@@ -8,13 +8,11 @@
 #include <chrono>
 #include "align_alloc.h"
 
-#define PLOT
+// #define PLOT
 
 #ifdef PLOT
 #include "../realtime_plot/GnuplotRealTime.h"
 #endif
-
-// using vec = double __attribute__ ((__vector_size__ (32)));
 
 class WaveSolver {
 public:
@@ -44,20 +42,13 @@ private:
     const double hx, hy;
     const double tau;
 
-    // using AlignedDoubleVector = std::vector<double, AlignedAllocator<double, 32>>;
-
-    // AlignedDoubleVector data;      // массив со всеми U
-    // AlignedDoubleVector P;         // фазовая скорость
-    // __m256d* data;
-    // __m256d* P;
-
     std::unique_ptr<double> data_a;  // Aligned memory for wave field data
-    std::unique_ptr<double> P_a;     // Aligned memory for phase speed
+    std::unique_ptr<double> P_a; // Aligned memory for phase speed
 
     double* data;
     double* P;
 
-    size_t totalTime = 0.0;    // полное время расчёта
+    size_t totalTime = 0.0; // полное время расчёта
     double currentMaxU = 0.0;  // текущее максимальное значение U
 
     // uint32_t prevGridIndex = 0;
@@ -65,7 +56,6 @@ private:
     uint32_t nextGridIndex = 1;
 
     __inline __attribute__((always_inline)) size_t access(int x, int y) const { return x+NX*y; };
-    __inline __attribute__((always_inline)) size_t access_full(int x, int y) const { return x+NX*y; };
     void initializeArrays();
     void updateWaveField(int n);
 #ifdef PLOT

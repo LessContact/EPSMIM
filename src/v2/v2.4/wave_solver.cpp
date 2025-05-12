@@ -25,11 +25,9 @@ WaveSolver::WaveSolver(const int nx, const int ny, const int nt, const int sx, c
 }
 
 void WaveSolver::initializeArrays() {
-    // Allocate aligned memory
     data_a.reset(static_cast<double*>(std::aligned_alloc(32, NY*NX*2*sizeof(double))));
     P_a.reset(static_cast<double*>(std::aligned_alloc(32, NY*NX*sizeof(double))));
 
-    // Initialize with zeros
     std::memset(data_a.get(), 0, NY*NX*2*sizeof(double));
 
     data = data_a.get();
@@ -41,6 +39,7 @@ void WaveSolver::initializeArrays() {
         }
     }
 }
+
 // [a1, a2, a3, b0]
 __inline __attribute__((always_inline)) static auto ShiftRight(const __m256d &a, const __m256d &b) {
     // step 1: t = [ a1, a2, a3, a0 ]
@@ -69,16 +68,8 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
     __m256d vMax = _mm256_setzero_pd();
     const __m256d maskForAbs = _mm256_set1_pd(-0.0);
 
-    // auto* vGridNext = reinterpret_cast<__m256d*>(data + gridStride * nextGridIndex);
-    // auto* vGridCurr = reinterpret_cast<__m256d*>(data + gridStride * currentGridIndex);
-
     auto* GridNext = data + gridStride * nextGridIndex;
     auto* GridCurr = data + gridStride * currentGridIndex;
-
-    // const auto* vP = reinterpret_cast<const __m256d*>(P);
-    // auto volatile var = (112 + 150*NX )%32;
-    // std::cout << var << std::endl;
-    // vGridNext[access(112,150)] = _mm256_set1_pd(0.0);
 
     const auto vSizeX = NX / 4;
     for (int i = 1; i < NY-1; ++i) {
@@ -86,26 +77,25 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
         int j = 1;
         for (; j < 4; ++j) {
             // Коэффициенты для производных по x
-            const double px1 = (P[access_full(j,i-1)] + P[access_full(j,i)]) * inv2hx2;
-            const double px2 = (P[access_full(j-1,i-1)] + P[access_full(j-1,i)]) * inv2hx2;
+            const double px1 = (P[access(j,i-1)] + P[access(j,i)]) * inv2hx2;
+            const double px2 = (P[access(j-1,i-1)] + P[access(j-1,i)]) * inv2hx2;
             // Коэффициенты для производных по y
-            const double py1 = (P[access_full(j-1,i)] + P[access_full(j,i)]) * inv2hy2;
-            const double py2 = (P[access_full(j-1,i-1)] + P[access_full(j,i-1)]) * inv2hy2;
+            const double py1 = (P[access(j-1,i)] + P[access(j,i)]) * inv2hy2;
+            const double py2 = (P[access(j-1,i-1)] + P[access(j,i-1)]) * inv2hy2;
 
             // Вычисление следующего временного слоя
-            data[gridStride*nextGridIndex + access_full(j,i)] = 2 * data[gridStride*currentGridIndex + access_full(j,i)] - data[gridStride*nextGridIndex + access_full(j,i)] +
+            data[gridStride*nextGridIndex + access(j,i)] = 2 * data[gridStride*currentGridIndex + access(j,i)] - data[gridStride*nextGridIndex + access(j,i)] +
                           tau2 * (
 
-                              px1 * (data[gridStride*currentGridIndex + access_full(j+1,i)] - data[gridStride*currentGridIndex + access_full(j,i)]) +
-                              px2 * (data[gridStride*currentGridIndex + access_full(j-1,i)] - data[gridStride*currentGridIndex + access_full(j,i)]) +
-                              py1 * (data[gridStride*currentGridIndex + access_full(j,i+1)] - data[gridStride*currentGridIndex + access_full(j,i)]) +
-                              py2 * (data[gridStride*currentGridIndex + access_full(j,i-1)] - data[gridStride*currentGridIndex + access_full(j,i)])
+                              px1 * (data[gridStride*currentGridIndex + access(j+1,i)] - data[gridStride*currentGridIndex + access(j,i)]) +
+                              px2 * (data[gridStride*currentGridIndex + access(j-1,i)] - data[gridStride*currentGridIndex + access(j,i)]) +
+                              py1 * (data[gridStride*currentGridIndex + access(j,i+1)] - data[gridStride*currentGridIndex + access(j,i)]) +
+                              py2 * (data[gridStride*currentGridIndex + access(j,i-1)] - data[gridStride*currentGridIndex + access(j,i)])
                           );
-            currentMaxU = std::max(currentMaxU, std::abs(data[gridStride*nextGridIndex + access_full(j,i)]));
+            currentMaxU = std::max(currentMaxU, std::abs(data[gridStride*nextGridIndex + access(j,i)]));
         }
 
         // the big chunk
-
         __m256d gridPrev;
         __m256d gridCurr = _mm256_load_pd(&GridCurr[access(0u, i)]);
         __m256d gridNext = _mm256_load_pd(&GridCurr[access(j, i)]);
@@ -175,21 +165,21 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
         // Handle remaining grid points with scalar code
         for (; j < NX - 1; ++j) {
             // Scalar computation identical to the original code
-            const double px1 = (P[access_full(j,i-1)] + P[access_full(j,i)]) * inv2hx2;
-            const double px2 = (P[access_full(j-1,i-1)] + P[access_full(j-1,i)]) * inv2hx2;
-            const double py1 = (P[access_full(j-1,i)] + P[access_full(j,i)]) * inv2hy2;
-            const double py2 = (P[access_full(j-1,i-1)] + P[access_full(j,i-1)]) * inv2hy2;
+            const double px1 = (P[access(j,i-1)] + P[access(j,i)]) * inv2hx2;
+            const double px2 = (P[access(j-1,i-1)] + P[access(j-1,i)]) * inv2hx2;
+            const double py1 = (P[access(j-1,i)] + P[access(j,i)]) * inv2hy2;
+            const double py2 = (P[access(j-1,i-1)] + P[access(j,i-1)]) * inv2hy2;
 
-            data[gridStride*nextGridIndex + access_full(j,i)] =
-                2 * data[gridStride*currentGridIndex + access_full(j,i)] -
-                data[gridStride*nextGridIndex + access_full(j,i)] +
+            data[gridStride*nextGridIndex + access(j,i)] =
+                2 * data[gridStride*currentGridIndex + access(j,i)] -
+                data[gridStride*nextGridIndex + access(j,i)] +
                 tau2 * (
-                    px1 * (data[gridStride*currentGridIndex + access_full(j+1,i)] - data[gridStride*currentGridIndex + access_full(j,i)]) +
-                    px2 * (data[gridStride*currentGridIndex + access_full(j-1,i)] - data[gridStride*currentGridIndex + access_full(j,i)]) +
-                    py1 * (data[gridStride*currentGridIndex + access_full(j,i+1)] - data[gridStride*currentGridIndex + access_full(j,i)]) +
-                    py2 * (data[gridStride*currentGridIndex + access_full(j,i-1)] - data[gridStride*currentGridIndex + access_full(j,i)])
+                    px1 * (data[gridStride*currentGridIndex + access(j+1,i)] - data[gridStride*currentGridIndex + access(j,i)]) +
+                    px2 * (data[gridStride*currentGridIndex + access(j-1,i)] - data[gridStride*currentGridIndex + access(j,i)]) +
+                    py1 * (data[gridStride*currentGridIndex + access(j,i+1)] - data[gridStride*currentGridIndex + access(j,i)]) +
+                    py2 * (data[gridStride*currentGridIndex + access(j,i-1)] - data[gridStride*currentGridIndex + access(j,i)])
                 );
-            currentMaxU = std::max(currentMaxU, std::abs(data[gridStride*nextGridIndex + access_full(j,i)]));
+            currentMaxU = std::max(currentMaxU, std::abs(data[gridStride*nextGridIndex + access(j,i)]));
         }
     }
 
