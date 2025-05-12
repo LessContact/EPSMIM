@@ -99,13 +99,14 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
             currentMaxU = std::max(currentMaxU, std::abs(data[gridStride*nextGridIndex + access_full(j,i)]));
         }
 
+        // the big chunk
         __m256d va = vGridCurr[access(0,i)];
         __m256d vb = vGridCurr[access(1,i)];
 
-        __m256d pca = vP[access(0,i)];
-        __m256d pcb = vP[access(1,i)];
+        __m256d pca = vP[access(0, i)];
+        __m256d pba = vP[access(0, i - 1)];
 
-        __m256d pba = vP[access(0,i-1)];
+        __m256d pcb = vP[access(1, i)];
         __m256d pbb = vP[access(1,i-1)];
 
         for (int j = 1; j < vSizeX - 1; ++j) {
@@ -123,25 +124,25 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
             const __m256d vP_Left = ShiftLeft(pca, pcb);
             const __m256d vP_BottomLeft = ShiftLeft(pba, pbb);
 
-            // get differentials
-            const __m256d vPx1 = _mm256_mul_pd(_mm256_add_pd(pbb, pcb), _inv2hx2);
-            const __m256d vPx2 = _mm256_mul_pd(_mm256_add_pd(vP_BottomLeft, vP_Left), _inv2hx2);
-            const __m256d vPy1 = _mm256_mul_pd(_mm256_add_pd(vP_Left, pcb), _inv2hy2);
-            const __m256d vPy2 = _mm256_mul_pd(_mm256_add_pd(vP_BottomLeft, pbb), _inv2hy2);
-
             //differences
             const __m256d vDiffRight = _mm256_sub_pd(vr, vb);
             const __m256d vDiffLeft = _mm256_sub_pd(vl, vb);
             const __m256d vDiffUp = _mm256_sub_pd(vTop, vb);
             const __m256d vDiffDown = _mm256_sub_pd(vBottom, vb);
 
+            // get differentials
+            const __m256d vPx1 = _mm256_mul_pd(_mm256_add_pd(pbb, pcb), _inv2hx2);
+            const __m256d vPx2 = _mm256_mul_pd(_mm256_add_pd(vP_BottomLeft, vP_Left), _inv2hx2);
+            const __m256d vPy1 = _mm256_mul_pd(_mm256_add_pd(vP_Left, pcb), _inv2hy2);
+            const __m256d vPy2 = _mm256_mul_pd(_mm256_add_pd(vP_BottomLeft, pbb), _inv2hy2);
+
             //terms
             const __m256d vTerm1 = _mm256_mul_pd(vDiffRight, vPx1);
             const __m256d vTerm2 = _mm256_mul_pd(vDiffLeft, vPx2);
-            // const __m256d vTerm3 = _mm256_mul_pd(vDiffDown, vPy1);
-            // const __m256d vTerm4 = _mm256_mul_pd(vDiffUp, vPy2);
-            const __m256d vTerm3 = _mm256_mul_pd(vDiffUp, vPy1);
-            const __m256d vTerm4 = _mm256_mul_pd(vDiffDown, vPy2);
+            const __m256d vTerm3 = _mm256_mul_pd(vDiffDown, vPy1);
+            const __m256d vTerm4 = _mm256_mul_pd(vDiffUp, vPy2);
+            // const __m256d vTerm3 = _mm256_mul_pd(vDiffUp, vPy1);
+            // const __m256d vTerm4 = _mm256_mul_pd(vDiffDown, vPy2);
             //sum
             const __m256d vSum = _mm256_add_pd(_mm256_add_pd(vTerm1, vTerm2), _mm256_add_pd(vTerm3, vTerm4));
             //result
@@ -151,8 +152,10 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
             // vGridNext[access(j,i)] = vResult;
             const __m256d vPrev = vGridNext[access(j,i)];
 
-            const __m256d vTmp = _mm256_fmsub_pd(_two, vb, vPrev);
-            const __m256d vResult = _mm256_fmadd_pd(_tau2, vSum, vTmp);
+            // const __m256d vTmp = _mm256_fmsub_pd(_two, vb, vPrev);
+            // const __m256d vResult = _mm256_fmadd_pd(_tau2, vSum, vTmp);
+            const __m256d vTmp = _mm256_fmsub_pd(_tau2, vSum, vPrev);
+            const __m256d vResult = _mm256_fmadd_pd(_two, vb, vTmp);
             vGridNext[access(j,i)] = vResult;
 
             const __m256d absNewGrid = _mm256_andnot_pd(maskForAbs, vResult);
