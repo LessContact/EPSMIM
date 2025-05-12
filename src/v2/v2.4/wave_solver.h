@@ -64,7 +64,7 @@ private:
     uint32_t currentGridIndex = 0;
     uint32_t nextGridIndex = 1;
 
-    __inline __attribute__((always_inline)) size_t access(int x, int y) const { return x+(NX/4)*y; };
+    __inline __attribute__((always_inline)) size_t access(int x, int y) const { return x+NX*y; };
     __inline __attribute__((always_inline)) size_t access_full(int x, int y) const { return x+NX*y; };
     void initializeArrays();
     void updateWaveField(int n);

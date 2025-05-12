@@ -69,9 +69,13 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
     __m256d vMax = _mm256_setzero_pd();
     const __m256d maskForAbs = _mm256_set1_pd(-0.0);
 
-    auto* vGridNext = reinterpret_cast<__m256d*>(data + gridStride * nextGridIndex);
-    auto* vGridCurr = reinterpret_cast<__m256d*>(data + gridStride * currentGridIndex);
-    const auto* vP = reinterpret_cast<const __m256d*>(P);
+    // auto* vGridNext = reinterpret_cast<__m256d*>(data + gridStride * nextGridIndex);
+    // auto* vGridCurr = reinterpret_cast<__m256d*>(data + gridStride * currentGridIndex);
+
+    auto* GridNext = data + gridStride * nextGridIndex;
+    auto* GridCurr = data + gridStride * currentGridIndex;
+
+    // const auto* vP = reinterpret_cast<const __m256d*>(P);
     // auto volatile var = (112 + 150*NX )%32;
     // std::cout << var << std::endl;
     // vGridNext[access(112,150)] = _mm256_set1_pd(0.0);
@@ -79,7 +83,8 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
     const auto vSizeX = NX / 4;
     for (int i = 1; i < NY-1; ++i) {
         // first 4 elems
-        for (int j = 1; j < 4; ++j) {
+        int j = 1;
+        for (; j < 4; ++j) {
             // Коэффициенты для производных по x
             const double px1 = (P[access_full(j,i-1)] + P[access_full(j,i)]) * inv2hx2;
             const double px2 = (P[access_full(j-1,i-1)] + P[access_full(j-1,i)]) * inv2hx2;
@@ -100,76 +105,60 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
         }
 
         // the big chunk
-        __m256d va = vGridCurr[access(0,i)];
-        __m256d vb = vGridCurr[access(1,i)];
 
-        __m256d pca = vP[access(0, i)];
-        __m256d pba = vP[access(0, i - 1)];
+        __m256d gridPrev;
+        __m256d gridCurr = _mm256_load_pd(&GridCurr[access(0u, i)]);
+        __m256d gridNext = _mm256_load_pd(&GridCurr[access(j, i)]);
 
-        __m256d pcb = vP[access(1, i)];
-        __m256d pbb = vP[access(1,i-1)];
+        __m256d phaseSpeedPrev;
+        __m256d phaseSpeedBottomPrev;
 
-        for (int j = 1; j < vSizeX - 1; ++j) {
-            const __m256d vc = vGridCurr[access(j+1,i)];
+        auto phaseSpeedCurr = _mm256_load_pd(&P[access(0u, i)]);
+        auto phaseSpeedBottomCurr = _mm256_load_pd(&P[access(0u, i - 1)]);
 
-            const __m256d pcc = vP[access(j+1,i)];
-            const __m256d pbc = vP[access(j+1,i-1)];
+        for (;j < NX - 4; j += 4) {
+            gridPrev = gridCurr;
+            gridCurr = gridNext;
+            gridNext = _mm256_load_pd(&GridCurr[access(j + 4, i)]);
 
-            const __m256d vTop = vGridCurr[access(j,i+1)];
-            const __m256d vBottom = vGridCurr[access(j,i-1)];
+            const auto gridLeft = ShiftLeft(gridPrev, gridCurr);
+            const auto gridBottom = _mm256_load_pd(&GridCurr[access(j, i - 1)]);
+            const auto gridRight = ShiftRight(gridCurr, gridNext);
+            const auto gridTop = _mm256_load_pd(&GridCurr[access(j, i + 1)]);
 
-            const __m256d vl = ShiftLeft(va, vb);
-            const __m256d vr = ShiftRight(vb, vc);
+            const auto diffLeft = _mm256_sub_pd(gridLeft, gridCurr);
+            const auto diffBottom = _mm256_sub_pd(gridBottom, gridCurr);
+            const auto diffRight = _mm256_sub_pd(gridRight, gridCurr);
+            const auto diffTop = _mm256_sub_pd(gridTop, gridCurr);
 
-            const __m256d vP_Left = ShiftLeft(pca, pcb);
-            const __m256d vP_BottomLeft = ShiftLeft(pba, pbb);
+            phaseSpeedPrev = phaseSpeedCurr;
+            phaseSpeedCurr = _mm256_load_pd(&P[access(j, i)]);
+            const auto phaseSpeedLeft = ShiftLeft(phaseSpeedPrev, phaseSpeedCurr);
 
-            //differences
-            const __m256d vDiffRight = _mm256_sub_pd(vr, vb);
-            const __m256d vDiffLeft = _mm256_sub_pd(vl, vb);
-            const __m256d vDiffUp = _mm256_sub_pd(vTop, vb);
-            const __m256d vDiffDown = _mm256_sub_pd(vBottom, vb);
+            phaseSpeedBottomPrev = phaseSpeedBottomCurr;
+            phaseSpeedBottomCurr = _mm256_load_pd(&P[access(j, i - 1)]);
+            const auto phaseSpeedBottomLeft = ShiftLeft(phaseSpeedBottomPrev, phaseSpeedBottomCurr);
 
-            // get differentials
-            const __m256d vPx1 = _mm256_mul_pd(_mm256_add_pd(pbb, pcb), _inv2hx2);
-            const __m256d vPx2 = _mm256_mul_pd(_mm256_add_pd(vP_BottomLeft, vP_Left), _inv2hx2);
-            const __m256d vPy1 = _mm256_mul_pd(_mm256_add_pd(vP_Left, pcb), _inv2hy2);
-            const __m256d vPy2 = _mm256_mul_pd(_mm256_add_pd(vP_BottomLeft, pbb), _inv2hy2);
+            // Compute phase differences
+            const __m256d vPx1 = _mm256_mul_pd(_mm256_add_pd(phaseSpeedBottomCurr, phaseSpeedCurr), _inv2hx2);
+            const __m256d vPx2 = _mm256_mul_pd(_mm256_add_pd(phaseSpeedBottomLeft, phaseSpeedLeft), _inv2hx2);
+            const __m256d vPy1 = _mm256_mul_pd(_mm256_add_pd(phaseSpeedLeft, phaseSpeedCurr), _inv2hy2);
+            const __m256d vPy2 = _mm256_mul_pd(_mm256_add_pd(phaseSpeedBottomLeft, phaseSpeedBottomCurr), _inv2hy2);
 
-            //terms
-            const __m256d vTerm1 = _mm256_mul_pd(vDiffRight, vPx1);
-            const __m256d vTerm2 = _mm256_mul_pd(vDiffLeft, vPx2);
-            const __m256d vTerm3 = _mm256_mul_pd(vDiffDown, vPy1);
-            const __m256d vTerm4 = _mm256_mul_pd(vDiffUp, vPy2);
-            // const __m256d vTerm3 = _mm256_mul_pd(vDiffUp, vPy1);
-            // const __m256d vTerm4 = _mm256_mul_pd(vDiffDown, vPy2);
-            //sum
-            const __m256d vSum = _mm256_add_pd(_mm256_add_pd(vTerm1, vTerm2), _mm256_add_pd(vTerm3, vTerm4));
-            //result
-            // const __m256d vCur = vGridCurr[access(j,i)];
-            // const __m256d vResult = _mm256_fmadd_pd(_two, vb,
-            //     _mm256_fmsub_pd(_tau2, vSum, vCur));
-            // vGridNext[access(j,i)] = vResult;
-            const __m256d vPrev = vGridNext[access(j,i)];
+            // Compute terms
+            const __m256d term1 = _mm256_mul_pd(diffRight, vPx1);
+            const __m256d term2 = _mm256_mul_pd(diffLeft, vPx2);
+            const __m256d term3 = _mm256_mul_pd(diffBottom, vPy1);
+            const __m256d term4 = _mm256_mul_pd(diffTop, vPy2);
 
-            // const __m256d vTmp = _mm256_fmsub_pd(_two, vb, vPrev);
-            // const __m256d vResult = _mm256_fmadd_pd(_tau2, vSum, vTmp);
-            const __m256d vTmp = _mm256_fmsub_pd(_tau2, vSum, vPrev);
-            const __m256d vResult = _mm256_fmadd_pd(_two, vb, vTmp);
-            vGridNext[access(j,i)] = vResult;
+            const __m256d vSum = _mm256_add_pd(_mm256_add_pd(term1, term2), _mm256_add_pd(term3, term4));
 
-            const __m256d absNewGrid = _mm256_andnot_pd(maskForAbs, vResult);
+            const __m256d vCurrent = _mm256_load_pd(&GridNext[access(j, i)]);
+            const __m256d vNewValue = _mm256_fmadd_pd(_two, gridCurr, _mm256_fmsub_pd(_tau2, vSum, vCurrent));
+            _mm256_store_pd(&GridNext[access(j, i)], vNewValue);
+
+            const __m256d absNewGrid = _mm256_andnot_pd(maskForAbs, vNewValue);
             vMax = _mm256_max_pd(vMax, absNewGrid);
-
-            //move right
-            va = vb;
-            vb = vc;
-
-            pca = pcb;
-            pcb = pcc;
-
-            pba = pbb;
-            pbb = pbc;
         }
 
         // reduction horizontal (for doubles, AVX2)
@@ -184,7 +173,7 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
         currentMaxU = std::max(currentMaxU, _mm_cvtsd_f64(max128));
 
         // Handle remaining grid points with scalar code
-        for (int j = NX - ((NX-1) % 4); j < NX-1; ++j) {
+        for (; j < NX - 1; ++j) {
             // Scalar computation identical to the original code
             const double px1 = (P[access_full(j,i-1)] + P[access_full(j,i)]) * inv2hx2;
             const double px2 = (P[access_full(j-1,i-1)] + P[access_full(j-1,i)]) * inv2hx2;
@@ -195,14 +184,10 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
                 2 * data[gridStride*currentGridIndex + access_full(j,i)] -
                 data[gridStride*nextGridIndex + access_full(j,i)] +
                 tau2 * (
-                    px1 * (data[gridStride*currentGridIndex + access_full(j+1,i)] -
-                          data[gridStride*currentGridIndex + access_full(j,i)]) +
-                    px2 * (data[gridStride*currentGridIndex + access_full(j-1,i)] -
-                          data[gridStride*currentGridIndex + access_full(j,i)]) +
-                    py1 * (data[gridStride*currentGridIndex + access_full(j,i+1)] -
-                          data[gridStride*currentGridIndex + access_full(j,i)]) +
-                    py2 * (data[gridStride*currentGridIndex + access_full(j,i-1)] -
-                          data[gridStride*currentGridIndex + access_full(j,i)])
+                    px1 * (data[gridStride*currentGridIndex + access_full(j+1,i)] - data[gridStride*currentGridIndex + access_full(j,i)]) +
+                    px2 * (data[gridStride*currentGridIndex + access_full(j-1,i)] - data[gridStride*currentGridIndex + access_full(j,i)]) +
+                    py1 * (data[gridStride*currentGridIndex + access_full(j,i+1)] - data[gridStride*currentGridIndex + access_full(j,i)]) +
+                    py2 * (data[gridStride*currentGridIndex + access_full(j,i-1)] - data[gridStride*currentGridIndex + access_full(j,i)])
                 );
             currentMaxU = std::max(currentMaxU, std::abs(data[gridStride*nextGridIndex + access_full(j,i)]));
         }
@@ -226,7 +211,7 @@ void WaveSolver::solve() {
 #ifdef PLOT
         std::string filename = "double" + std::string(5 - std::to_string(n).length(), '0') + std::to_string(n);
         plotter.updatePlot(&(data[NX*NY * currentGridIndex]), filename, false, NX*NY);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
 #endif
         // Show progress every 10% iterations
         if (n % (NT/10) == 0) {
