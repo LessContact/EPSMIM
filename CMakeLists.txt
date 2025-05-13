@@ -56,12 +56,13 @@ add_executable(v2.3 src/v2/v2.3/main.cpp
         src/v2/v2.3/wave_solver.cpp
         ${COMMON_SRC})
 
-# assume aligned without fma
+# assume aligned with fma
 add_executable(v2.4 src/v2/v2.4/main.cpp
         src/v2/v2.4/wave_solver.cpp
         ${COMMON_SRC}
         src/v2/v2.4/align_alloc.h)
 
+# memory optimization
 add_executable(v3.0 src/v3/v3.0/main.cpp
         src/v3/v3.0/wave_solver.cpp
         ${COMMON_SRC})
