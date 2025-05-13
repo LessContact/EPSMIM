@@ -1,10 +1,9 @@
 #ifndef WAVE_SOLVER_HPP
 #define WAVE_SOLVER_HPP
 
-#include <vector>
-#include <cmath>
-#include <algorithm>
 #include <chrono>
+#include <cmath>
+#include <vector>
 
 // #define PLOT
 
@@ -49,9 +48,10 @@ private:
     int currentGridIndex = 0;
     int nextGridIndex = 1;
 
-    __inline __attribute__((always_inline)) size_t access(int x, int y) const { return x+NX*y; };
+    __inline __attribute__((always_inline)) size_t access(const int x, const int y) const { return x+NX*y; };
     void initializeArrays();
     void updateWaveField(int n, int i);
+    double GetSource(int n) const;
 #ifdef PLOT
     GnuplotRealTime plotter;
 #endif

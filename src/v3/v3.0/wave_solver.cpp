@@ -1,5 +1,6 @@
 #include "wave_solver.h"
 
+#include <immintrin.h>
 #include <fstream>
 #include <iostream>
 
@@ -56,6 +57,7 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
     double * __restrict__ current_data = &data[gridStride*currentGridIndex];
     double * __restrict__ next_data = &data[gridStride*nextGridIndex];
     const double * __restrict__ p_values = P.data();
+    double rowMax = currentMaxU;
 
     for (int j = 1; j < NX-1; ++j) {
         // Коэффициенты для производных по x
@@ -73,17 +75,25 @@ __inline __attribute__((always_inline)) void WaveSolver::updateWaveField(const i
                       py1 * (current_data[access(j,i+1)] - current_data[access(j,i)]) +
                       py2 * (current_data[access(j,i-1)] - current_data[access(j,i)])
                   );
-        // currentMaxU = std::max(currentMaxU, std::abs(next_data[access(j,i)]));
+        rowMax = std::fmax(rowMax,  std::abs(next_data[access(j,i)]));
     }
-    const double t = n * tau;
-    const double arg = 2 * std::numbers::pi * f0 * (t - t0);
-    next_data[access(SY, SX)] += tau2*std::exp(-(arg * arg) / (gamma * gamma)) * std::sin(arg);
+    if (i == SY) {
+        const double t = n * tau;
+        const double arg = 2 * std::numbers::pi * f0 * (t - t0);
+        next_data[access(SY, SX)] += tau2*std::exp(-(arg * arg) / (gamma * gamma)) * std::sin(arg);
+    }
+    currentMaxU = rowMax;
 }
 
+__inline __attribute__((always_inline)) double WaveSolver::GetSource(const int n) const {
+    const double t = n * tau;
+    const double arg = 2 * std::numbers::pi * f0 * (t - t0);
+    return tau*tau*std::exp(-(arg * arg) / (gamma * gamma)) * std::sin(arg);}
+
 void WaveSolver::solve() {
-    // const std::vector<int> steps{1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20, 24, 25, 30, 40, 60, 80, 90, 100};
+    const std::vector<int> steps{1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20, 24, 25, 30, 40, 60, 80, 90, 100};
+    // const std::vector<int> steps{10};
     constexpr int rerunCount = 1;
-    const std::vector<int> steps{10};
 
     std::vector<std::pair<int, int>> stepResults(steps.size(), std::make_pair(0, 0));
     for (int rerunIndex = 0; rerunIndex < rerunCount; ++rerunIndex) {
@@ -136,7 +146,7 @@ void WaveSolver::solve() {
 #ifdef PLOT
                 std::string filename = "double" + std::string(5 - std::to_string(step).length(), '0') + std::to_string(step);
                 plotter.updatePlot(&(data[NX*NY * currentGridIndex]), filename, false, NX*NY);
-                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                std::this_thread::sleep_for(std::chrono::milliseconds(30));
 #endif
                 // // Вывод прогресса каждые 10% итераций
                 if (step % (NT/10) == 0) {
